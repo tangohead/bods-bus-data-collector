@@ -1,0 +1,16 @@
+# Secrets files
+db.env
+.env
+credentials.py
+
+# Data files
+*.json
+*.xml
+
+# VENV
+venv/*
+
+# DB 
+pg_data/*
+
+*.pyc
