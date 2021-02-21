@@ -10,6 +10,8 @@ The tool has two modes:
 * Python 3.6+ 
 * Docker
 
+Note that the guide below refers to Linux. This should run fine on Windows but I haven't tested it. Some commands such as activating the virtual environment will change a little.
+
 ## Setup
 
 To use this tool, you will need a BODS API key. To get one, sign up to BODS [here](https://data.bus-data.dft.gov.uk/).
@@ -21,6 +23,7 @@ You will also need to set up `credentials.py`, plus `.env` and `db.env` if you w
 As always, it's best to set up a virtual environment. After changing to this repo, run:
 ```
 python3 -m venv venv
+source venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
