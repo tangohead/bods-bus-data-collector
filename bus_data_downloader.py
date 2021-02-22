@@ -167,7 +167,8 @@ def add_bus_location_to_db_session(bus_loc_report: dict, db_session: Session):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Tool to collect and publish the latest BODS data for a given operator."
+        description="Tool to collect and publish the latest BODS data for a given operator.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         "--db",

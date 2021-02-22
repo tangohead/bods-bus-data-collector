@@ -16,6 +16,7 @@ Note that the guide below refers to Linux. This should run fine on Windows but I
 
 ```
 usage: bus_data_downloader.py [-h] [--db] [--aws]
+                              [--aws_filename AWS_FILENAME]
                               [--sleep_interval SLEEP_INTERVAL]
                               operator_code output_path
 
@@ -27,11 +28,14 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --db                  Save each update to a database.
-  --aws                 Push to S3 Bucket on each update.
+  --db                  Save each update to a database. (default: False)
+  --aws                 Push to S3 Bucket on each update. (default: False)
+  --aws_filename AWS_FILENAME
+                        Name to push to S3 bucket. (default:
+                        current_bus_locations.json)
   --sleep_interval SLEEP_INTERVAL
                         How many seconds to sleep between each pull from the
-                        API.
+                        API. (default: 15)
 ```
 
 ## Setup
