@@ -12,6 +12,7 @@ import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 import pandas as pd
+import boto3
 
 from bus_data_models import Base, BusLocation
 import credentials
@@ -100,6 +101,11 @@ def output_json(bus_loc_list: list, output_path: Path):
         A list of bus location report dictionaries.
     output_path: Path
         Path to save JSON to.
+
+    Returns
+    -------
+    json_str : str
+        A string representation of the JSON object.
     """
 
     # Convert to a DF and get rid of some of the columns not useful on the
@@ -110,7 +116,14 @@ def output_json(bus_loc_list: list, output_path: Path):
     # Remove some unnecessary charaters
     output_df.loc[output_df["direction_ref"] == "INBOUND", ["direction_ref"]] = "I"
     output_df.loc[output_df["direction_ref"] == "OUTBOUND", ["direction_ref"]] = "O"
-    output_df.to_json(output_path, orient="records")
+
+    # We want to write and have the option to put it on S3, so we do it
+    # this way
+    json_str = output_df.to_json(None, orient="records")
+    with open(output_path, "w") as f:
+        f.write(json_str)
+
+    return json_str
 
 
 def add_bus_location_to_db_session(bus_loc_report: dict, db_session: Session):
@@ -154,7 +167,8 @@ def add_bus_location_to_db_session(bus_loc_report: dict, db_session: Session):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Tool to collect and publish the latest BODS data for a given operator."
+        description="Tool to collect and publish the latest BODS data for a given operator.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         "--db",
@@ -167,6 +181,24 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "output_path", help="Location to save each update to.", type=str
+    )
+    parser.add_argument(
+        "--aws",
+        help="Push to S3 Bucket on each update.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--aws_filename",
+        help="Name to push to S3 bucket.",
+        type=str,
+        default="current_bus_locations.json",
+    )
+    parser.add_argument(
+        "--sleep_interval",
+        help="How many seconds to sleep between each pull from the API.",
+        type=int,
+        default=15,
     )
     args = parser.parse_args()
 
@@ -201,6 +233,10 @@ if __name__ == "__main__":
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
 
+    # Set up AWS
+    if args.aws:
+        s3 = boto3.resource("s3")
+
     # Set up operator code and URL to query
     operator_ref = args.operator_code
     location_url = BODS_LOCATION_API_URL.format(operator_ref, credentials.BODS_API_KEY)
@@ -228,7 +264,13 @@ if __name__ == "__main__":
                 if args.db:
                     add_bus_location_to_db_session(converted_activity, session)
 
-            output_json(json_output_list, output_path)
+            json_str = output_json(json_output_list, output_path)
+
+            # if using AWS, push to bucket
+            if args.aws:
+                s3.Bucket(credentials.S3_BUCKET_NAME).put_object(
+                    Key=args.aws_filename, Body=json_str, ACL="public-read"
+                )
 
             # Commit to Database
             if args.db:
@@ -236,4 +278,4 @@ if __name__ == "__main__":
         except Exception as e:
             logging.error("Error getting data: {}".format(e))
 
-        time.sleep(7)
+        time.sleep(args.sleep_interval)

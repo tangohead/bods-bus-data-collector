@@ -12,6 +12,32 @@ The tool has two modes:
 
 Note that the guide below refers to Linux. This should run fine on Windows but I haven't tested it. Some commands such as activating the virtual environment will change a little.
 
+## Usage
+
+```
+usage: bus_data_downloader.py [-h] [--db] [--aws]
+                              [--aws_filename AWS_FILENAME]
+                              [--sleep_interval SLEEP_INTERVAL]
+                              operator_code output_path
+
+Tool to collect and publish the latest BODS data for a given operator.
+
+positional arguments:
+  operator_code         The BODS operator code to grab.
+  output_path           Location to save each update to.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --db                  Save each update to a database. (default: False)
+  --aws                 Push to S3 Bucket on each update. (default: False)
+  --aws_filename AWS_FILENAME
+                        Name to push to S3 bucket. (default:
+                        current_bus_locations.json)
+  --sleep_interval SLEEP_INTERVAL
+                        How many seconds to sleep between each pull from the
+                        API. (default: 15)
+```
+
 ## Setup
 
 To use this tool, you will need a BODS API key. To get one, sign up to BODS [here](https://data.bus-data.dft.gov.uk/).
@@ -25,6 +51,11 @@ As always, it's best to set up a virtual environment. After changing to this rep
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
+```
+
+Note that if you install on MacOS, you may encounter an issue building Psycopg2 - if so, you can install OpenSSL with Homebrew and build as follows:
+```
+env LDFLAGS="-I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib" pip install psycopg2
 ```
 
 ### Setting up PostgreSQL
@@ -52,13 +83,16 @@ Once you have set these files up, run:
 docker-compose up -d
 ```
 This will set up your database.
+### Push to AWS
 
+To push to AWS, simply set up your AWS credentials using the [AWS CLI tool](https://aws.amazon.com/cli/).
 ### Credentials.py
 
 Use the template [credentials.py.tmpl](credentials.py.tmpl) and fill in your BODS API key.
 
 If you are using Postgres, also fill in your database details, making sure that they are in quotes and match the ones defined in the environment files above.
 
+If you want to push to an S3 bucket, then make sure to set your bucket name.
 ### Setting up the Database
 
 Again, skip this if you only want to output JSON.
@@ -68,7 +102,6 @@ Next we need to create the table for storing the data. To do this, run:
 python3 bus_data_models.py
 ```
 This will connect to the database and set up the required table.
-
 ## Running the Tool
 
 You will need to find the operator code for the operator you want to collect data on. You can find these on the [Traveline NOC Database](https://www.travelinedata.org.uk/traveline-open-data/transport-operations/browse/).
@@ -83,4 +116,7 @@ To run in DB mode too:
 python3 bus_data_downloader.py [OPERATOR CODE] [JSON_PATH] --db
 ```
 
-
+To push to AWS:
+```
+python3 bus_data_downloader.py [OPERATOR CODE] [JSON_PATH] --aws
+```
