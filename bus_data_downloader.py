@@ -198,7 +198,13 @@ if __name__ == "__main__":
         "--sleep_interval",
         help="How many seconds to sleep between each pull from the API.",
         type=int,
-        default=15,
+        default=6,
+    )
+    parser.add_argument(
+        "--aws_push_interval",
+        help="The number of sleep cycles to wait between pushing data to AWS.",
+        type=int,
+        default=3
     )
     args = parser.parse_args()
 
@@ -242,7 +248,7 @@ if __name__ == "__main__":
     location_url = BODS_LOCATION_API_URL.format(operator_ref, credentials.BODS_API_KEY)
 
     # Loop to get latest data
-
+    aws_interval_counter = 0
     while True:
         try:
             # Get the latest info
@@ -266,11 +272,15 @@ if __name__ == "__main__":
 
             json_str = output_json(json_output_list, output_path)
 
+            aws_interval_counter += 1
+
             # if using AWS, push to bucket
-            if args.aws:
+            if args.aws and aws_interval_counter >= args.aws_push_interval:
+                aws_interval_counter = 0
                 s3.Bucket(credentials.S3_BUCKET_NAME).put_object(
                     Key=args.aws_filename, Body=json_str, ACL="public-read"
                 )
+                
 
             # Commit to Database
             if args.db:
