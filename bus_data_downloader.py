@@ -170,6 +170,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname)s: %(message)s",
+        handlers=[
+            logging.FileHandler("data_collector.log"),
+            logging.StreamHandler()
+        ]
+    )
+
     # Check output path validity
     output_path = Path(args.output_path)
     if output_path.is_dir():
@@ -197,30 +206,34 @@ if __name__ == "__main__":
     location_url = BODS_LOCATION_API_URL.format(operator_ref, credentials.BODS_API_KEY)
 
     # Loop to get latest data
+
     while True:
-        # Get the latest info
-        resp = requests.get(location_url)
-        tree = ET.fromstring(resp.text)
+        try:
+            # Get the latest info
+            resp = requests.get(location_url)
+            tree = ET.fromstring(resp.text)
 
-        # Extract the activities
-        activities = tree.findall(
-            "./{http://www.siri.org.uk/siri}ServiceDelivery/{http://www.siri.org.uk/siri}VehicleMonitoringDelivery/{http://www.siri.org.uk/siri}VehicleActivity"
-        )
+            # Extract the activities
+            activities = tree.findall(
+                "./{http://www.siri.org.uk/siri}ServiceDelivery/{http://www.siri.org.uk/siri}VehicleMonitoringDelivery/{http://www.siri.org.uk/siri}VehicleActivity"
+            )
 
-        # Convert each to JSON
-        json_output_list = []
-        for activity in activities:
-            converted_activity = convert_activity_to_dict(activity)
-            json_output_list.append(converted_activity)
+            # Convert each to JSON
+            json_output_list = []
+            for activity in activities:
+                converted_activity = convert_activity_to_dict(activity)
+                json_output_list.append(converted_activity)
 
-            # Add to database if needed
+                # Add to database if needed
+                if args.db:
+                    add_bus_location_to_db_session(converted_activity, session)
+
+            output_json(json_output_list, output_path)
+
+            # Commit to Database
             if args.db:
-                add_bus_location_to_db_session(converted_activity, session)
-
-        output_json(json_output_list, output_path)
-
-        # Commit to Database
-        if args.db:
-            session.commit()
+                session.commit()
+        except Exception as e:
+            logging.error("Error getting data: {}".format(e))
 
         time.sleep(7)
