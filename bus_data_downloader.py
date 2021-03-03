@@ -121,7 +121,12 @@ def output_json(bus_loc_list: list, output_path: Path):
 
     # We want to write and have the option to put it on S3, so we do it
     # this way
-    json_str = output_df.to_json(None, orient="records")
+    df_str = output_df.to_dict(orient="records")
+    json_str = json.dumps({
+        "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "data": df_str
+    })
+
     with open(output_path, "w") as f:
         f.write(json_str)
 
