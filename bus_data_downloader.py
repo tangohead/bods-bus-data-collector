@@ -2,8 +2,10 @@ import time
 import argparse
 import logging
 import json
+import gzip
 import xml.etree.ElementTree
 import xml.etree.ElementTree as ET
+from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -277,8 +279,17 @@ if __name__ == "__main__":
             # if using AWS, push to bucket
             if args.aws and aws_interval_counter >= args.aws_push_interval:
                 aws_interval_counter = 0
+                # Great snippet from https://gist.github.com/veselosky/9427faa38cee75cd8e27
+                upload_obj = BytesIO()
+                json_comp = gzip.GzipFile(None, 'w', 9, upload_obj)
+                json_comp.write(json_str.encode('utf-8'))
+                json_comp.close()
                 s3.Bucket(credentials.S3_BUCKET_NAME).put_object(
-                    Key=args.aws_filename, Body=json_str, ACL="public-read"
+                    Key=args.aws_filename, 
+                    Body=upload_obj.getvalue(), 
+                    ACL="public-read",
+                    ContentType='application/json',
+                    ContentEncoding='gzip',
                 )
                 
 
