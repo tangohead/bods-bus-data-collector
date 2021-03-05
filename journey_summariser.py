@@ -441,6 +441,10 @@ def generate_daily_summary(
     detailed_df = pd.read_sql(text(detailed_sql), db_session.bind)
     summary_df = pd.read_sql(text(summary_sql), session.bind)
 
+    # Convert to string to avoid JSON serialisation troubles
+    detailed_df["hour"] = detailed_df["hour"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+    summary_df["hour"] = summary_df["hour"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+
     json_obj = {
         "detailed": detailed_df.to_dict(orient="records"),
         "summary": summary_df.to_dict(orient="records"),
