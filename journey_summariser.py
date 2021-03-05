@@ -442,8 +442,8 @@ def generate_daily_summary(
     summary_df = pd.read_sql(text(summary_sql), session.bind)
 
     json_obj = {
-        "detailed": detailed_df.to_json(orient="records"),
-        "summary": summary_df.to_json(orient="records"),
+        "detailed": detailed_df.to_dict(orient="records"),
+        "summary": summary_df.to_dict(orient="records"),
         "num_days": num_detailed_days,
         "start": start_dt.strftime("%Y-%m-%d"),
     }
@@ -468,7 +468,7 @@ if __name__ == "__main__":
         help="Process all of yesterday's data.",
     )
     parser.add_argument(
-        "--s3",
+        "--aws",
         action="store_true",
         help="Produce a summary JSON file and push it to an S3 bucket.",
     )
