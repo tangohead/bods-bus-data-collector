@@ -443,7 +443,6 @@ def generate_daily_summary(
 
     # Convert to string to avoid JSON serialisation troubles
     detailed_df["hour"] = detailed_df["hour"].dt.strftime("%Y-%m-%dT%H:%M:%S")
-    summary_df["hour"] = summary_df["hour"].dt.strftime("%Y-%m-%dT%H:%M:%S")
 
     json_obj = {
         "detailed": detailed_df.to_dict(orient="records"),
