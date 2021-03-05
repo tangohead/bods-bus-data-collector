@@ -496,7 +496,7 @@ if __name__ == "__main__":
         end_dt = datetime.datetime(today.year, today.month, today.day)
         process_day(session, start_dt, end_dt)
 
-    if args.s3:
+    if args.aws:
         daily_summary_json = generate_daily_summary(
             session, datetime.datetime.now() - datetime.timedelta(days=1)
         )
