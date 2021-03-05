@@ -236,28 +236,6 @@ def convert_locations_to_journey_summaries(
     else:
         return None
 
-# def check_duplicate_journey_ref_ids(db_session: Session, check_df: pd.DataFrame) -> pd.DataFrame:
-#     # We need to check for rogue rows inserted where the same journey ref has been used twice by mistake
-
-#     # This doesn't work - might be in a different hour. Will need to check rows. 
-#     # Could query to see if journey_date_line_ref exists, and if it does, either drop the row from the frame or from the DB in advance of the inser
-
-#     # We first need to check if there are any duplicates in the frame itself
-#     duplicated_refs = check_df.duplicated(["journey_date_line_ref"], keep=False)].copy()
-
-#     if duplicated_refs.shape[0] > 0:
-#         print("Found duplicated refs")
-#         for ref in duplicated_refs["journey_date_line_ref"].unique():
-#             single_duplicated_ref = duplicated_refs[duplicated_refs["journey_date_line_ref"] == ref]
-
-#             leftover_rows = single_duplicated_ref.drop(single_duplicated_ref["num_points"].idxmax())
-
-#             check_df = check_df.drop(leftover_rows)
-    
-#     # Now we check if there is an entry in the DB already for this journey_ref
-#     # if so we check which has the higher point count. If in the DB we drop
-#     # the row from the DF, otherwise we drop the DB row.
-
 
 def process_day(
     db_session: Session, start_dt: datetime, end_dt: datetime, chunk_size: int = 1
@@ -445,8 +423,8 @@ def generate_daily_summary(
     detailed_df["hour"] = detailed_df["hour"].dt.strftime("%Y-%m-%dT%H:%M:%S")
 
     json_obj = {
-        "detailed": detailed_df.to_dict(orient="records"),
-        "summary": summary_df.to_dict(orient="records"),
+        "detailed": detailed_df.round(3).to_dict(orient="records"),
+        "summary": summary_df.round(3).to_dict(orient="records"),
         "num_days": num_detailed_days,
         "start": start_dt.strftime("%Y-%m-%d"),
     }
