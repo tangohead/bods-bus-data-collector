@@ -44,7 +44,9 @@ def preprocess_locations(
         + raw_locations_df["vehicle_journey_ref"]
     )
     raw_locations_df["journey_date_line_ref"] = (
-        raw_locations_df["origin_aimed_departure_time"].dt.strftime("%Y-%m-%d")
+        raw_locations_df["operator_ref"]
+        + "_"
+        + raw_locations_df["origin_aimed_departure_time"].dt.strftime("%Y-%m-%dT%H:%M%s")
         + "_"
         + raw_locations_df["line_ref"]
         + "_"
@@ -291,15 +293,6 @@ def process_day(
             hour_summaries_df = convert_locations_to_journey_summaries(hour_bus_locs_df)
 
             if hour_summaries_df is not None:
-                if (
-                    hour_summaries_df[
-                        hour_summaries_df["journey_date_line_ref"]
-                        == "2021-02-18_10_163"
-                    ].shape[0]
-                    > 0
-                ):
-                    print("Found one")
-
                 session.bulk_insert_mappings(
                     JourneySummary, hour_summaries_df.to_dict(orient="records")
                 )
@@ -426,9 +419,12 @@ def generate_daily_summary(
     detailed_df = pd.read_sql(text(detailed_sql), db_session.bind)
     summary_df = pd.read_sql(text(summary_sql), session.bind)
 
+    # Convert to string to avoid JSON serialisation troubles
+    detailed_df["hour"] = detailed_df["hour"].dt.strftime("%Y-%m-%dT%H:%M:%S")
+
     json_obj = {
-        "detailed": detailed_df.to_json(orient="records"),
-        "summary": summary_df.to_json(orient="records"),
+        "detailed": detailed_df.round(3).to_dict(orient="records"),
+        "summary": summary_df.round(3).to_dict(orient="records"),
         "num_days": num_detailed_days,
         "start": start_dt.strftime("%Y-%m-%d"),
     }
@@ -453,7 +449,7 @@ if __name__ == "__main__":
         help="Process all of yesterday's data.",
     )
     parser.add_argument(
-        "--s3",
+        "--aws",
         action="store_true",
         help="Produce a summary JSON file and push it to an S3 bucket.",
     )
@@ -481,7 +477,7 @@ if __name__ == "__main__":
         end_dt = datetime.datetime(today.year, today.month, today.day)
         process_day(session, start_dt, end_dt)
 
-    if args.s3:
+    if args.aws:
         daily_summary_json = generate_daily_summary(
             session, datetime.datetime.now() - datetime.timedelta(days=1)
         )
