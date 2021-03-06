@@ -395,7 +395,7 @@ def generate_daily_summary(
     COUNT(*) AS num_journeys
     FROM journey_summary
     WHERE hour <= date '{}' and hour > date '{}'
-    GROUP BY hour, line_ref;""".format(
+    GROUP BY hour, line_ref, direction_ref;""".format(
         start_dt - datetime.timedelta(days=1),
         start_dt - datetime.timedelta(days=num_detailed_days - 1),
     )
@@ -418,7 +418,7 @@ def generate_daily_summary(
     extract('hour' from hour) AS hour_num
     FROM journey_summary
     WHERE hour <= date '{}' and hour > date '{}'
-    GROUP BY hour_num, line_ref;""".format(
+    GROUP BY hour_num, line_ref, direction_ref;""".format(
         start_dt - datetime.timedelta(days=1),
         start_dt - datetime.timedelta(days=num_summary_days - 1),
     )
