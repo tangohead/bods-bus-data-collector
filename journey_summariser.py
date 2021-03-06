@@ -385,7 +385,8 @@ def generate_daily_summary(
     AVG(speed_med_mph) AS speed_med_mph_avg,
     line_ref,
     hour,
-    COUNT(*) AS num_journeys
+    COUNT(*) AS num_journeys,
+    direction_ref
     FROM journey_summary
     WHERE hour <= date '{}' and hour > date '{}'
     GROUP BY hour, line_ref, direction_ref;""".format(
@@ -408,7 +409,8 @@ def generate_daily_summary(
     AVG(speed_med_mph) AS speed_med_mph_avg,
     line_ref,
     COUNT(*) AS num_journeys,
-    extract('hour' from hour) AS hour_num
+    extract('hour' from hour) AS hour_num,
+    direction_ref
     FROM journey_summary
     WHERE hour <= date '{}' and hour > date '{}'
     GROUP BY hour_num, line_ref, direction_ref;""".format(
